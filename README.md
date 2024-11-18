@@ -1,15 +1,7 @@
-# Optimizing the Platform of Careem, the Ride Hailing Company
+# Valhalla Traffic Integration for Careem
 
 ## Overview
-This repository contains a collection of Python and Bash scripts developed as part of my senior project focused on optimizing Careem's ride-hailing platform in Amman, Jordan. The project primarily aims to obtain accurate ETAs from Valhalla's routing engine instead of using the trip time feature provided in Amman's pooling dataset. This is achieved by incorporating historical traffic data into Valhalla's routing engine, without modifying Valhalla's original C++ implementation.
-
-## Key Features
-- Amman-specific OSM Data Processing
-- Routing Engine Evaluation (Valhalla vs OSRM)
-- Valhalla Graph ID Conversion
-- Day/Night Speed Extraction for Obtaining Freeflow and Constrained Speeds
-- Coordinate-to-OSM Way ID Mapping
-- Historical Speeds Processing
+A Python-based solution for integrating historical traffic data with Valhalla's routing engine to improve ETA accuracy for Careem's ride-hailing platform in Amman, Jordan. This implementation enhances Valhalla's routing capabilities without modifying its core C++ codebase.
 
 ## Prerequisites
 - Python 3.x
@@ -17,91 +9,66 @@ This repository contains a collection of Python and Bash scripts developed as pa
 - Valhalla routing engine
 - OSRM (for validation)
 
+## Setup and Configuration
+
+### Installing Valhalla
+Follow the [gis-ops guide for installing Valhalla on Ubuntu](https://gis-ops.com/valhalla-part-1-how-to-install-on-ubuntu/#Introduction).
+
+### Running Valhalla
+For basic Valhalla configuration and running instructions, see the [gis-ops guide for running Valhalla](https://gis-ops.com/valhalla-part-2-how-to-run-valhalla-on-ubuntu/).
+
 ## Project Structure
+
+### Source Files (`src/`)
+
+#### Route Processing
+- `routes.py`: Validates routing accuracy by comparing Valhalla and OSRM distance calculations
+- `get_etas.py`: Extracts and processes ETAs from Valhalla
+- `graph_id.py`: Handles Valhalla graph ID conversion and processing
+
+#### Speed Data Management
+- `predicted_speeds.py`: Converts historical speed data using DCT-II functionality
+- `speeds_checker.py`: Validates speed data against Jordan's traffic regulations
+- `speeds_extractor.py`: Extracts speed data from JSON format
+
+#### Data Integration
+- `main.py`: Prepares and writes traffic CSV files
+- `valhalla_way_id_mapper.py`: Maps OSM way IDs to coordinates
+
+### Scripts (`scripts/`)
+- `download_jordan_osm.sh`: Downloads latest Jordan OSM data
+- `extract_amman_data.sh`: Extracts Amman-specific region using Osmium
+
+## Core Components
+
+### Routing System Integration
+The system integrates with Valhalla through:
+- Graph ID conversion matching Valhalla's internal format
+- OSM way ID mapping for coordinate pairs
+- Batch processing support for routing requests
+
+### Traffic Data Processing
+Processes historical traffic data to enhance ETA accuracy:
+- Analyzes 2016 weekly speed patterns (5-minute intervals)
+- Extracts day/night speed variations
+- Validates against local speed limits
+- Prepares data in Valhalla-compatible format
+
+### Data Preparation Scripts
+```bash
+# Get Jordan OSM data
+./scripts/download_jordan_osm.sh
+
+# Extract Amman region
+./scripts/extract_amman_data.sh
 ```
-osm-valhalla-traffic-mapper/
-├── src/
-│   ├── routes.py                 # OSRM vs Valhalla distance comparison logic
-│   ├── graph_id.py               # Graph ID processing
-│   ├── predicted_speeds.py       # Historical speeds conversion to DCT-II functionality
-│   ├── main.py                   # Traffic CSV file preparation and writing utilities 
-│   ├── get_etas.py               # Valhalla ETA extraction functionality
-│   ├── speeds_checker.py         # Speed-limit violation validator
-│   ├── speeds_extractor.py       # Speed data extraction from JSON
-│   └── valhalla_way_id_mapper.py # OSM way ID mapping tools
-├── scripts/
-│   ├── download_jordan_osm.sh   # Script to download Jordan OSM data
-│   └── extract_amman_data.sh    # Script to extract Amman region data using Osmium
-```
-
-## Component Details
-
-### Graph ID Conversion
-- **File**: `graphid.py`
-- **Purpose**: Implements the equivalent C++ functionality from Valhalla for converting graph IDs
-- **Features**:
-  - Converts numerical graph IDs to Valhalla string representation
-  - Handles way_edges.txt format
-  - Compatible with Valhalla's internal ID system
-
-### Historical Traffic Data Processing
-- **File**: `predicted_speeds.py`
-- **Purpose**: Extract historical traffic data to improve Valhalla's ETA calculations
-- **Features**:
-  - Processes 2016 weekly speed data assuming 5-minute sampling intervals
-  - Extracts actual traffic speeds for different times of day
-  - Prepares speed data in a format compatible with Valhalla
-  - Enables more accurate ETA predictions without modifying Valhalla's source code
-
-### Routing Integration
-- **File**: `valhalla_way_id_mapper.py`
-- **Features**:
-  - Integrates with Valhalla routing engine
-  - Maps coordinates to OSM way IDs
-  - Supports batch processing of coordinate pairs
-
-### Speed Data Incorporation
-- **Files**: `speeds_checker.py`, `speeds_extractor.py`
-- **Purpose**: Prepare historical traffic data for ETA calculations
-- **Features**:
-  - Extracts day and night speeds from historical data
-  - Processes trip segments with distance and time data
-  - Checks for speed-limit violations using Jordan's speed limits for motorways (max speed limit)
-  - Prepares speed data for integration with Valhalla
-
-### Route Validation
-- **File**: `routes.py`
-- **Features**:
-  - Compares route distances between Valhalla and OSRM
-  - Uses OSRM as ground truth for validation
-  - Generates comparison metrics
-
-### OSM Data Processing Scripts
-- **Location**: `scripts/`
-- **Components**:
-  1. `download_jordan_osm.sh`
-     - Downloads the latest OpenStreetMap data for Jordan
-     - Places the downloaded data in the appropriate directory
-     - Streamlines the data acquisition process
-
-  2. `extract_amman_data.sh`
-     - Extracts Amman-specific region from Jordan OSM data
-     - Filters unnecessary data outside Amman boundaries
-     - Places the extracted data in the designated folder
-     - Reduces data size by focusing on the Amman region
-
-- **Usage**:
-  ```bash
-  # Download Jordan OSM data
-  ./scripts/download_jordan_osm.sh
-
-  # Extract Amman region
-  ./scripts/extract_amman_data.sh
-  ```
 
 ## Contributing
-Contributions are welcome! Please feel free to submit a pull request.
+Contributions welcome via pull requests.
 
 ## Acknowledgments
 - OpenStreetMap contributors
-- Valhalla and OSRM development teams
+- Valhalla and OSRM teams
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
