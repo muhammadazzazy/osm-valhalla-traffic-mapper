@@ -103,9 +103,6 @@ osm-valhalla-traffic-mapper/
 ## Contributing
 Contributions are welcome! Please feel free to submit a pull request.
 
-## License
-[Specify your license here]
-
 ## Acknowledgments
 - OpenStreetMap contributors
 - Valhalla and OSRM development teams
