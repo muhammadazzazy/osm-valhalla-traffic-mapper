@@ -10,17 +10,50 @@ A Python-based solution for integrating historical traffic data with Valhalla's 
 - OSRM (for validation)
 
 ## Setup and Configuration
-
 ### Installing Valhalla
 Follow the [gis-ops guide for installing Valhalla on Ubuntu](https://gis-ops.com/valhalla-part-1-how-to-install-on-ubuntu/#Introduction).
 
 ### Running Valhalla
 For basic Valhalla configuration and running instructions, see the [gis-ops guide for running Valhalla](https://gis-ops.com/valhalla-part-2-how-to-run-valhalla-on-ubuntu/).
 
+### Project-Specific Setup
+After installing and configuring Valhalla:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/valhalla-traffic-integration.git
+   cd valhalla-traffic-integration
+   ```
+2. Download Jordan OSM data:
+   ```bash
+   ./scripts/download_jordan_osm.sh
+   ```
+3. Extract Amman region:
+   ```bash
+   ./scripts/extract_amman_data.sh
+   ```
+4. Process speed data:
+   ```bash
+   python src/predicted_speeds.py
+   ```
+
 ## Project Structure
+```
+osm-valhalla-traffic-mapper/
+├── src/
+│   ├── routes.py                 # OSRM vs Valhalla distance comparison logic
+│   ├── graph_id.py               # Graph ID processing
+│   ├── predicted_speeds.py       # Historical speeds conversion to DCT-II functionality
+│   ├── main.py                   # Traffic CSV file preparation and writing utilities 
+│   ├── get_etas.py               # Valhalla ETA extraction functionality
+│   ├── speeds_checker.py         # Speed-limit violation validator
+│   ├── speeds_extractor.py       # Speed data extraction from JSON
+│   └── valhalla_way_id_mapper.py # OSM way ID mapping tools
+├── scripts/
+│   ├── download_jordan_osm.sh    # Script to download Jordan OSM data
+│   └── extract_amman_data.sh     # Script to extract Amman region data using Osmium
+```
 
 ### Source Files (`src/`)
-
 #### Route Processing
 - `routes.py`: Validates routing accuracy by comparing Valhalla and OSRM distance calculations
 - `get_etas.py`: Extracts and processes ETAs from Valhalla
@@ -40,7 +73,6 @@ For basic Valhalla configuration and running instructions, see the [gis-ops guid
 - `extract_amman_data.sh`: Extracts Amman-specific region using Osmium
 
 ## Core Components
-
 ### Routing System Integration
 The system integrates with Valhalla through:
 - Graph ID conversion matching Valhalla's internal format
@@ -54,21 +86,9 @@ Processes historical traffic data to enhance ETA accuracy:
 - Validates against local speed limits
 - Prepares data in Valhalla-compatible format
 
-### Data Preparation Scripts
-```bash
-# Get Jordan OSM data
-./scripts/download_jordan_osm.sh
-
-# Extract Amman region
-./scripts/extract_amman_data.sh
-```
-
 ## Contributing
 Contributions welcome via pull requests.
 
 ## Acknowledgments
 - OpenStreetMap contributors
 - Valhalla and OSRM teams
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
