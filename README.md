@@ -31,10 +31,6 @@ After installing and configuring Valhalla:
    ```bash
    ./scripts/extract_amman_data.sh
    ```
-4. Process speed data:
-   ```bash
-   python src/predicted_speeds.py
-   ```
 
 ## Project Structure
 ```
