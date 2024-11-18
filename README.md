@@ -41,7 +41,7 @@ After installing and configuring Valhalla:
 osm-valhalla-traffic-mapper/
 ├── src/
 │   ├── routes.py                 # OSRM vs Valhalla distance comparison logic
-│   ├── graph_id.py               # Graph ID processing
+│   ├── graph_id.py               # Python implementation of the to_string functionality provided by Valhalla
 │   ├── predicted_speeds.py       # Historical speeds conversion to DCT-II functionality
 │   ├── main.py                   # Traffic CSV file preparation and writing utilities 
 │   ├── get_etas.py               # Valhalla ETA extraction functionality
@@ -81,7 +81,7 @@ The system integrates with Valhalla through:
 
 ### Traffic Data Processing
 Processes historical traffic data to enhance ETA accuracy:
-- Analyzes 2016 weekly speed patterns (5-minute intervals)
+- Processes 2016 weekly speed patterns (5-minute intervals)
 - Extracts day/night speed variations
 - Validates against local speed limits
 - Prepares data in Valhalla-compatible format
