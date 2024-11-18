@@ -1,15 +1,15 @@
 # Optimizing the Platform of Careem, the Ride Hailing Company
 
 ## Overview
-This repository contains a collection of Python and Bash scripts developed as part of my senior project focused on optimizing Careem's ride-hailing platform in Amman, Jordan. The project primarily aims to improve ETA accuracy by incorporating historical traffic data into Valhalla's routing engine, without modifying Valhalla's source code.
+This repository contains a collection of Python and Bash scripts developed as part of my senior project focused on optimizing Careem's ride-hailing platform in Amman, Jordan. The project primarily aims to obtain accurate ETAs from Valhalla's routing engine instead of using the trip time feature provided in Amman's pooling dataset. This is achieved by incorporating historical traffic data into Valhalla's routing engine, without modifying Valhalla's original C++ implementation.
 
 ## Key Features
 - Amman-specific OSM Data Processing
-- Routing Engine Validation (Valhalla vs OSRM)
+- Routing Engine Evaluation (Valhalla vs OSRM)
 - Valhalla Graph ID Conversion
 - Day/Night Speed Extraction for Obtaining Freeflow and Constrained Speeds
 - Coordinate-to-OSM Way ID Mapping
-- Historical Traffic Speeds Processing
+- Historical Speeds Processing
 
 ## Prerequisites
 - Python 3.x
@@ -21,14 +21,13 @@ This repository contains a collection of Python and Bash scripts developed as pa
 ```
 osm-valhalla-traffic-mapper/
 ├── src/
-│   ├── get_etas.py              # ETA calculation utilities
-│   ├── graph_id.py              # Graph ID processing
-│   ├── graphid.py               # Valhalla graph ID conversion implementation
-│   ├── main.py                  # Main application entry point
-│   ├── predicted_speeds.py      # Historical speeds conversion to DCT-II implementation
-│   ├── routes.py                # Route processing utilities
-│   ├── speeds_checker.py        # Speed-limit violation logic
-│   ├── speeds_extractor.py      # Speed data extraction from JSON
+│   ├── routes.py                 # OSRM vs Valhalla distance comparison logic
+│   ├── graph_id.py               # Graph ID processing
+│   ├── predicted_speeds.py       # Historical speeds conversion to DCT-II functionality
+│   ├── main.py                   # Traffic CSV file preparation and writing utilities 
+│   ├── get_etas.py               # Valhalla ETA extraction functionality
+│   ├── speeds_checker.py         # Speed-limit violation validator
+│   ├── speeds_extractor.py       # Speed data extraction from JSON
 │   └── valhalla_way_id_mapper.py # OSM way ID mapping tools
 ├── scripts/
 │   ├── download_jordan_osm.sh   # Script to download Jordan OSM data
