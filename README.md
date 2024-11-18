@@ -20,8 +20,8 @@ For basic Valhalla configuration and running instructions, see the [gis-ops guid
 After installing and configuring Valhalla:
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/valhalla-traffic-integration.git
-   cd valhalla-traffic-integration
+   git clone https://github.com/muhammadazzazy/osm-valhalla-traffic-mapper.git
+   cd osm-valhalla-traffic-mapper
    ```
 2. Download Jordan OSM data:
    ```bash
