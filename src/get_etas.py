@@ -3,6 +3,28 @@ import requests
 import os
 from typing import Dict, Tuple
 
+from datetime import datetime, timedelta
+
+def convert_minutes_to_iso8601(date, minutes_from_midnight):
+    """
+    Convert minutes from midnight to ISO 8601 datetime format.
+    
+    Args:
+        date (str): Date in 'YYYY-MM-DD' format.
+        minutes_from_midnight (int): Time in minutes from 12:00 AM.
+    
+    Returns:
+        str: ISO 8601 formatted datetime string.
+    """
+    # Parse the date
+    base_datetime = datetime.strptime(date, "%Y-%m-%d")
+    
+    # Add the minutes to midnight
+    target_datetime = base_datetime + timedelta(minutes=minutes_from_midnight)
+    
+    # Format to ISO 8601
+    return target_datetime.strftime("%Y-%m-%dT%H:%M")
+
 def get_project_root() -> str:
     """
     Get the project root directory.
@@ -38,10 +60,11 @@ def extract_trip_info(trip_data: str) -> Tuple[str, int, Tuple[float, float], Tu
     start_lng = float(data['lngs'][0])
     end_lat = float(data['lats'][-1])
     end_lng = float(data['lngs'][-1])
+    time_id = int(data['timeID'])
     
-    return trip_id, segment_id, (start_lat, start_lng), (end_lat, end_lng)
+    return trip_id, segment_id, (start_lat, start_lng), (end_lat, end_lng), time_id
 
-def get_valhalla_eta(start_coords: Tuple[float, float], end_coords: Tuple[float, float], valhalla_url: str) -> float:
+def get_valhalla_eta(start_coords: Tuple[float, float], end_coords: Tuple[float, float], valhalla_url: str, date_time) -> float:
     """
     Get ETA from Valhalla for given coordinates considering traffic.
     """
@@ -52,7 +75,11 @@ def get_valhalla_eta(start_coords: Tuple[float, float], end_coords: Tuple[float,
         ],
         "costing": "auto",
         "directions_options": {"units": "kilometers"},
-        "use_traffic": True  # Add traffic-related parameter
+        "use_traffic": True,  # Add traffic-related parameter
+        "date_time": {
+            "type": 1,  # Use a specific departure time
+            "value": date_time
+        }
     }
     
     try:
@@ -83,8 +110,9 @@ def process_trips(input_file: str, valhalla_url: str) -> Dict[str, Dict[int, flo
                 continue
                 
             # Get trip details
-            trip_id, segment_id, start_coords, end_coords = extract_trip_info(line)
-            
+            trip_id, segment_id, start_coords, end_coords, time_id = extract_trip_info(line)
+            print(time_id)
+
             # Skip if we've already processed this trip_id and segment_id
             if trip_id in trip_etas and segment_id in trip_etas[trip_id]:
                 continue
@@ -94,7 +122,11 @@ def process_trips(input_file: str, valhalla_url: str) -> Dict[str, Dict[int, flo
                 trip_etas[trip_id] = {}
                 
             # Get ETA from Valhalla
-            eta = get_valhalla_eta(start_coords, end_coords, valhalla_url)
+            date_time = convert_minutes_to_iso8601('2024-01-31', time_id)
+            print(trip_id)
+            print(date_time)
+
+            eta = get_valhalla_eta(start_coords, end_coords, valhalla_url, date_time)
             if eta is not None:
                 trip_etas[trip_id][segment_id] = eta
     
@@ -120,8 +152,8 @@ def main():
     
     # Get project root and construct file paths
     project_root = get_project_root()
-    input_file = os.path.join(project_root, 'data', 'input', 'Segmented_Trips_01_27.json')
-    output_file = os.path.join(project_root, 'data', 'output', 'ETAs_01_27.json')
+    input_file = os.path.join(project_root, 'data', 'input', 'Segmented_Trips_01_31.json')
+    output_file = os.path.join(project_root, 'data', 'output', 'ETAs_01_31.json')
     
     # Process trips and get ETAs
     trip_etas = process_trips(input_file, VALHALLA_URL)

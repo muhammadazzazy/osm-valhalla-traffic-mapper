@@ -181,7 +181,7 @@ def main():
 
     # Write the traffic information to the CSV files according to Valhalla's file naming and directory structure
     # conventions
-    date = '01_27'
+    date = '01_31'
     json_extension = '.json'
     daytime_speeds_filename = f'osm_way_daytime_speeds_{date}{json_extension}'
     daytime_speeds_path = PROJECT_ROOT / "data" / "output" / daytime_speeds_filename
