@@ -44,6 +44,7 @@ osm-valhalla-traffic-mapper/
 │   ├── speeds_checker.py         # Speed-limit violation validator
 │   ├── speeds_extractor.py       # Speed data extraction from JSON
 │   └── valhalla_way_id_mapper.py # OSM way ID mapping tools
+│   └── valhalla_monitor.py       # Traffic CSV monitoring for automating updates to routing graph
 ├── scripts/
 │   ├── download_jordan_osm.sh    # Script to download Jordan OSM data
 │   └── extract_amman_data.sh     # Script to extract Amman region data using Osmium
