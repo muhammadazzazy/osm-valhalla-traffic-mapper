@@ -3,6 +3,7 @@ import csv
 import os
 from pathlib import Path
 import json
+import argparse
 
 from graph_id import GraphId
 
@@ -71,6 +72,9 @@ def write_csv_from_gph(gph_paths, way_edges, daytime_speeds_file, nighttime_spee
     # Default speeds (km/h)
     DEFAULT_FREEFLOW_SPEED = 50
     DEFAULT_CONSTRAINED_SPEED = 40
+
+    # Minimum speed (km/h)
+    MIN_SPEED = 5
     
     # Load speed data from JSON files
     try:
@@ -113,6 +117,12 @@ def write_csv_from_gph(gph_paths, way_edges, daytime_speeds_file, nighttime_spee
                 freeflow_speed = round(float(nighttime_speeds.get(osm_way_id, DEFAULT_FREEFLOW_SPEED)))
                 constrained_speed = round(float(daytime_speeds.get(osm_way_id, DEFAULT_CONSTRAINED_SPEED)))
                 
+                if freeflow_speed < MIN_SPEED:
+                    freeflow_speed = 5
+                    
+                if constrained_speed < MIN_SPEED:
+                    constrained_speed = 5
+
                 # Extract the last 3 digits before the second slash
                 for direction, graph_id in graph_info:
                     if '/' in str(graph_id):
@@ -127,7 +137,6 @@ def write_csv_from_gph(gph_paths, way_edges, daytime_speeds_file, nighttime_spee
             
         print(count)
         print(f"CSV file written to: {csv_path}")
-
 
 def delete_files(directory, extension):
     """
@@ -145,6 +154,11 @@ def delete_files(directory, extension):
 
 def main():
     """Main function."""
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Process traffic data with specified date.')
+    parser.add_argument('date', type=str, help='Date in MM_DD format (e.g., 01_25)')
+    args = parser.parse_args()
+
     traffic_path = "/home/muhammad-azzazy/Desktop/valhalla/build/custom_files/valhalla_traffic"
     # Delete the existing traffic CSV files from the tiles directory
     delete_files(traffic_path, extension='.csv')
@@ -172,21 +186,16 @@ def main():
     print(len(file_paths))
 
     # Extract the file names of the .gph files from the extracted file paths
-    file_names = []
-    for file_path in file_paths:
-        file_names.append(os.path.basename(file_path))
-    print(file_names)
-    
     file_names = [file_path.split('/')[-1].split('.')[0] for file_path in file_paths]
+    print(file_names)
 
     # Write the traffic information to the CSV files according to Valhalla's file naming and directory structure
     # conventions
-    date = '01_31'
     json_extension = '.json'
-    daytime_speeds_filename = f'osm_way_daytime_speeds_{date}{json_extension}'
+    daytime_speeds_filename = f'osm_way_daytime_speeds_{args.date}{json_extension}'
     daytime_speeds_path = PROJECT_ROOT / "data" / "output" / daytime_speeds_filename
     
-    nighttime_speeds_filename = f'osm_way_nighttime_speeds_{date}{json_extension}'
+    nighttime_speeds_filename = f'osm_way_nighttime_speeds_{args.date}{json_extension}'
     nighttime_speeds_path = PROJECT_ROOT / "data" / "output" / nighttime_speeds_filename
     write_csv_from_gph(file_paths, way_edges, daytime_speeds_path, nighttime_speeds_path)
     print(f"Traffic CSV files successfully written to {traffic_path}.")

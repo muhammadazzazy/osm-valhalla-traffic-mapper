@@ -1,8 +1,8 @@
 import json
 import requests
 import os
+import argparse
 from typing import Dict, Tuple
-
 from datetime import datetime, timedelta
 
 def convert_minutes_to_iso8601(date, minutes_from_midnight):
@@ -68,6 +68,10 @@ def get_valhalla_eta(start_coords: Tuple[float, float], end_coords: Tuple[float,
     """
     Get ETA from Valhalla for given coordinates considering traffic.
     """
+    if start_coords == end_coords:
+        print(f"Skipping Valhalla request: Start and end coordinates are identical: {start_coords}")
+        return None
+    
     request_json = {
         "locations": [
             {"lat": start_coords[0], "lon": start_coords[1]},
@@ -90,14 +94,14 @@ def get_valhalla_eta(start_coords: Tuple[float, float], end_coords: Tuple[float,
         print(f"Error getting ETA from Valhalla: {e}")
         return None
 
-
-def process_trips(input_file: str, valhalla_url: str) -> Dict[str, Dict[int, float]]:
+def process_trips(input_file: str, valhalla_url: str, date: str) -> Dict[str, Dict[int, float]]:
     """
     Process all trips in the input file and get ETAs from Valhalla.
     
     Args:
         input_file (str): Path to input JSON file
         valhalla_url (str): Valhalla server URL
+        date (str): Date in YYYY-MM-DD format
     
     Returns:
         dict: Nested dictionary mapping trip_id to segment_id to ETA in seconds
@@ -122,7 +126,7 @@ def process_trips(input_file: str, valhalla_url: str) -> Dict[str, Dict[int, flo
                 trip_etas[trip_id] = {}
                 
             # Get ETA from Valhalla
-            date_time = convert_minutes_to_iso8601('2024-01-31', time_id)
+            date_time = convert_minutes_to_iso8601(date, time_id)
             print(trip_id)
             print(date_time)
 
@@ -147,16 +151,25 @@ def write_results(trip_etas: Dict[str, Dict[int, float]], output_file: str):
         json.dump(trip_etas, f, indent=2)
 
 def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Process trip data with specified date.')
+    parser.add_argument('date', type=str, help='Date in MM_DD format (e.g., 01_25)')
+    args = parser.parse_args()
+    
+    # Convert MM_DD format to YYYY-MM-DD format
+    date_parts = args.date.split('_')
+    full_date = f"2024-{date_parts[0]}-{date_parts[1]}"
+    
     # Configuration
     VALHALLA_URL = "http://localhost:8002"  # Adjust this to your Valhalla server URL
     
     # Get project root and construct file paths
     project_root = get_project_root()
-    input_file = os.path.join(project_root, 'data', 'input', 'Segmented_Trips_01_31.json')
-    output_file = os.path.join(project_root, 'data', 'output', 'ETAs_01_31.json')
+    input_file = os.path.join(project_root, 'data', 'input', f'Segmented_Trips_{args.date}.json')
+    output_file = os.path.join(project_root, 'data', 'output', f'ETAs_{args.date}.json')
     
     # Process trips and get ETAs
-    trip_etas = process_trips(input_file, VALHALLA_URL)
+    trip_etas = process_trips(input_file, VALHALLA_URL, full_date)
     
     # Write results
     write_results(trip_etas, output_file)

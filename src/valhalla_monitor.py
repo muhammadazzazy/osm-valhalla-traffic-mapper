@@ -27,49 +27,59 @@ def find_valhalla_service_pid():
             continue
     return None
 
-def manage_valhalla_service(valhalla_build_dir):
+def manage_valhalla_service(valhalla_build_dir, max_retries=3):
     """Start or restart the valhalla_service."""
     service_path = os.path.join(valhalla_build_dir, "valhalla_service")
     config_path = os.path.join(valhalla_build_dir, "valhalla.json")
     
-    # Check if service is running
-    pid = find_valhalla_service_pid()
-    
-    if pid:
-        # Stop existing service
-        logging.info(f"Stopping existing valhalla_service (PID: {pid})")
+    for attempt in range(max_retries):
+        # Stop existing service if running
+        pid = find_valhalla_service_pid()
+        if pid:
+            logging.info(f"Stopping existing valhalla_service (PID: {pid})")
+            try:
+                psutil.Process(pid).terminate()
+                time.sleep(3)  # Give more time for cleanup
+                if psutil.pid_exists(pid):
+                    psutil.Process(pid).kill()
+                    time.sleep(2)  # Wait after force kill
+            except psutil.NoSuchProcess:
+                pass
+
         try:
-            psutil.Process(pid).terminate()
-            time.sleep(2)  # Give it time to shut down
-            if psutil.pid_exists(pid):
-                psutil.Process(pid).kill()  # Force kill if still running
-        except psutil.NoSuchProcess:
-            pass
-    
-    # Start new service instance
-    try:
-        logging.info("Starting valhalla_service...")
-        command = [service_path, config_path]
-        
-        # Start service in background
-        subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=valhalla_build_dir
-        )
-        
-        # Wait briefly to ensure service starts
-        time.sleep(2)
-        
-        # Verify service is running
-        if find_valhalla_service_pid():
-            logging.info("valhalla_service started successfully")
-        else:
-            logging.error("Failed to start valhalla_service")
+            logging.info(f"Starting valhalla_service (attempt {attempt + 1}/{max_retries})...")
+            # Start process without blocking
+            process = subprocess.Popen(
+                [service_path, config_path],
+                stdout=subprocess.DEVNULL,  # Don't capture output
+                stderr=subprocess.DEVNULL,  # Don't capture errors
+                cwd=valhalla_build_dir
+            )
             
-    except Exception as e:
-        logging.error(f"Error managing valhalla_service: {e}")
+            # Give it a moment to start
+            time.sleep(5)
+            
+            # Check if process is running
+            if process.poll() is None:  # None means it's still running
+                logging.info("Valhalla service started successfully")
+                return True
+            else:
+                logging.error(f"Failed to start Valhalla service on attempt {attempt + 1}")
+                if attempt < max_retries - 1:
+                    logging.info("Waiting before retry...")
+                    time.sleep(5)  # Wait before next attempt
+                continue
+                
+        except Exception as e:
+            logging.error(f"Error starting service on attempt {attempt + 1}: {e}")
+            if attempt < max_retries - 1:
+                logging.info("Waiting before retry...")
+                time.sleep(5)
+            continue
+    
+    # If we get here, all attempts failed
+    logging.error("Failed to start Valhalla service after all retry attempts")
+    return False
 
 class TrafficUpdateHandler(FileSystemEventHandler):
     def __init__(self, config_path, traffic_dir, valhalla_build_dir):
@@ -104,12 +114,9 @@ class TrafficUpdateHandler(FileSystemEventHandler):
     def update_traffic(self):
         try:
             logging.info("All files have been modified. Running traffic update...")
-            
-            # Store current directory
             original_dir = os.getcwd()
             
             try:
-                # Change to build directory
                 os.chdir(self.valhalla_build_dir)
                 logging.info(f"Changed to directory: {self.valhalla_build_dir}")
                 
@@ -119,8 +126,8 @@ class TrafficUpdateHandler(FileSystemEventHandler):
                     
                 command = [
                     self.valhalla_executable,
-                    "-c", "valhalla.json",  # Use relative path since we're in build directory
-                    "-t", "custom_files/valhalla_traffic"  # Use relative path
+                    "-c", "valhalla.json",
+                    "-t", "custom_files/valhalla_traffic"
                 ]
                 
                 logging.info(f"Running command: {' '.join(command)}")
@@ -139,11 +146,16 @@ class TrafficUpdateHandler(FileSystemEventHandler):
                 
                 logging.info("Traffic update completed successfully")
                 
-                # After successful traffic update, manage the service
-                manage_valhalla_service(self.valhalla_build_dir)
+                # After successful traffic update, try to restart service
+                if not manage_valhalla_service(self.valhalla_build_dir):
+                    logging.error("Failed to restart Valhalla service - traffic update may not be applied")
+                    # Add additional sleep and one more retry if the first attempts failed
+                    logging.info("Waiting 10 seconds before final retry...")
+                    time.sleep(10)
+                    if not manage_valhalla_service(self.valhalla_build_dir):
+                        logging.error("Service restart failed after final retry - manual intervention may be required")
                     
             finally:
-                # Always restore original directory
                 os.chdir(original_dir)
                 
         except subprocess.CalledProcessError as e:
